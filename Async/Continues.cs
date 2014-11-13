@@ -3,11 +3,25 @@ using System.Collections.Generic;
 
 namespace Async
 {
-
+	/// <summary>
+	/// Состояния задачи
+	/// </summary>
 	public enum ContinuesStatuses
 	{
+		/// <summary>
+		/// Завершить задачу успешно
+		/// </summary>
 		OK,
+
+		/// <summary>
+		/// Завершить задачу с ошибкой
+		/// </summary>
 		Error,
+
+
+		/// <summary>
+		/// Продолжить исполнение задачи
+		/// </summary>
 		Continue
 	}
 
@@ -16,6 +30,9 @@ namespace Async
 
 	public delegate void DContinuesPathEvent(ContinuesPath path);
 
+	/// <summary>
+	/// Путь задач
+	/// </summary>
 	public class ContinuesPath
 	{
 		List<Delegate> actions;
@@ -30,32 +47,56 @@ namespace Async
 			actions = new List<Delegate>();
 		}
 
+		/// <summary>
+		/// Количество задач в очереди
+		/// </summary>
+		/// <value>The count.</value>
 		public int Count { get { return actions.Count; } }
 
+		/// <summary>
+		/// Добавить задачу в конец очереди
+		/// </summary>
+		/// <param name="action">Action.</param>
 		public ContinuesPath Add(DContinueActionWithPath action)
 		{
 			this.actions.Add(action);
 			return this;
 		}
 
+		/// <summary>
+		/// Добавить задачу в конец очереди
+		/// </summary>
+		/// <param name="action">Action.</param>
 		public ContinuesPath Add(DContinueAction action)
 		{
 			this.actions.Add(action);
 			return this;
 		}
 
+		/// <summary>
+		/// Добавить задачу в начало очереди
+		/// </summary>
+		/// <param name="action">Action.</param>
 		public ContinuesPath Insert(DContinueAction action)
 		{
 			this.actions.Insert(0,action);
 			return this;
 		}
 
+
+		/// <summary>
+		/// Добавить задачу в начало очереди
+		/// </summary>
+		/// <param name="action">Action.</param>
 		public ContinuesPath Insert(DContinueActionWithPath action)
 		{
 			this.actions.Insert(0,action);
 			return this;
 		}
 
+		/// <summary>
+		/// Бросить эту задачу и начать следующую
+		/// </summary>
 		public void Next()
 		{
 			if (this.actions.Count > 0) {
@@ -65,6 +106,9 @@ namespace Async
 			}
 		}
 
+		/// <summary>
+		/// Остановить очередь задач
+		/// </summary>
 		public void Stop()
 		{
 			if (this.actions.Count > 0) {
@@ -75,6 +119,9 @@ namespace Async
 			}
 		}
 
+		/// <summary>
+		/// Обновления состояния задачи
+		/// </summary>
 		public void Update()
 		{
 			if (actions.Count > 0) {
