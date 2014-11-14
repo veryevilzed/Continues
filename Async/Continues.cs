@@ -4,15 +4,16 @@ using System.Collections.Generic;
 namespace Async
 {
 
-	public enum ContinuesStatuses
+	public enum Statuses
 	{
 		OK,
 		Error,
-		Continue
+		Continue,
+		Wait
 	}
 
-	public delegate ContinuesStatuses DContinueActionWithPath(ContinuesPath path);
-	public delegate ContinuesStatuses DContinueAction();
+	public delegate Statuses DContinueActionWithPath(ContinuesPath path);
+	public delegate Statuses DContinueAction();
 
 	public delegate void DContinuesPathEvent(ContinuesPath path);
 
@@ -81,19 +82,19 @@ namespace Async
 
 				Delegate d = actions[0];
 
-				ContinuesStatuses st = ContinuesStatuses.OK;
+				Statuses st = Statuses.OK;
 				if (d.GetType() == typeof(DContinueActionWithPath))
 					st = ((DContinueActionWithPath)actions[0]).Invoke(this);
 				else
 					st = ((DContinueAction)actions[0]).Invoke();
 				bool error = false;
 				switch (st) {
-					case ContinuesStatuses.OK:
+					case Statuses.OK:
 						actions.RemoveAt(0);
 						if (this.OnNext != null && actions.Count>0)
 							this.OnNext(this);
 						break;
-					case ContinuesStatuses.Error:
+					case Statuses.Error:
 						actions.Clear();
 						error = true;
 						if (this.OnError != null)

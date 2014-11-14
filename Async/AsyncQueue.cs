@@ -24,7 +24,6 @@ namespace Async
 			public float SecondsDelay {get;set;}
 		}
 
-
 		static AsyncQueue _instance = null;
 
 		/// <summary>
@@ -79,7 +78,7 @@ namespace Async
 		/// </summary>
 		/// <param name="deltaTime">Для Unity3d Time.deltaTime</param>
 		/// <param name="count">Количество задач</param>
-		public void Execute(float deltaTime, int count)
+		public void Update(float deltaTime, int count)
 		{
 			for (int i = 0; i < count; i++) {
 				if (actions.Count == 0)
@@ -107,9 +106,9 @@ namespace Async
 		/// Метод для вызова исполнителя 
 		/// </summary>
 		/// <param name="deltaTime">Для Unity3d Time.deltaTime</param>
-		public void Execute(float deltaTime)
+		public void Update(float deltaTime)
 		{
-			Execute(deltaTime, this.Count);
+			Update(deltaTime, this.Count);
 		}
 
 		public int Count { get { return actions.Count; } }

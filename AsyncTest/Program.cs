@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using Async;
 
 
 namespace AsyncTest
@@ -8,54 +9,46 @@ namespace AsyncTest
 
 	class MainClass
 	{
-		static Async.ContinuesPath cp = new Async.ContinuesPath();
+		static Async.NamedAsyncQueue nq = new Async.NamedAsyncQueue();
 		static Thread th;
-		static int i = 0;
+
+		static bool run = true;
+
 		public static void Run()
 		{
-			while (cp.Count > 0) {
-				cp.Update();
-				Thread.Sleep(500);
-			}
-
-		}
-
-		public static Async.ContinuesStatuses Tick(Async.ContinuesPath p)
-		{
-			Console.WriteLine("Hello {0}", i);
-			i++;
-			if (i < 5)
-				return Async.ContinuesStatuses.Continue;
-			else {
-				return Async.ContinuesStatuses.OK;
+			while (run) {
+				nq.Update(0.1f);
+				Thread.Sleep(100);
 			}
 		}
 
-		public static Async.ContinuesStatuses Finish(Async.ContinuesPath p)
-		{
-			Console.WriteLine("Finish");
-			p.Add(Tick).Add(Finish);
-			i = 0;
-			return Async.ContinuesStatuses.OK;
-		}
 
 
 		public static void Main(string[] args)
 		{
 
-			cp.Add(Tick).Add(Finish);
 
 			th = new Thread(new ThreadStart(Run));
 			th.Start();
 
-			Console.ReadKey();
-			cp.Next();
-			Console.ReadKey();
-			cp.Next();
-			Console.ReadKey();
-			cp.Stop();
+			nq.AddPeriodic("", (Async.NamedActionState state) => {
+				Async.NamedActionPeriodicState _state = (NamedActionPeriodicState)state;
+				Console.WriteLine("- {0} {1} {2}",state.IntegerCounter.ToString(), _state.PeriodicDelay, _state.PeriodicCounter);
+				return Async.Statuses.Continue;
+			}, 2.1f, 5);
 
-			Console.WriteLine("I = {0}", i);
+			nq.AddPeriodic("", (Async.NamedActionState state) => {
+				Async.NamedActionPeriodicState _state = (NamedActionPeriodicState)state;
+				Console.WriteLine("--- {0} {1} {2}",state.IntegerCounter.ToString(), _state.PeriodicDelay, _state.PeriodicCounter);
+				return Async.Statuses.Continue;
+			}, 1.3f, 10);
+
+
+
+			Console.ReadKey();
+
+			th.Abort();
+
 
 
 		}
