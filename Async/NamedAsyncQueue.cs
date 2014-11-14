@@ -30,7 +30,6 @@ namespace Async
 			if (Delay > 0 && Status == Statuses.Wait) {
 				Delay -= delta;
 			}
-				
 
 			if (Delay <= 0 && Status == Statuses.Wait)
 				Status = Statuses.Continue;
@@ -198,6 +197,24 @@ namespace Async
 			this.Add(name, new NamedActionPeriodicState(action, delay, count, args));
 			return this;
 		}
+
+		public NamedActionState Get(string name)
+		{
+			return this.queue[name];
+		}
+
+		public NamedAsyncQueue SetKV(string name, string key, object value)
+		{
+			this.queue[name].Set(key, value);
+			return this;
+		}
+
+		public object GetKV(string name, string key, object def)
+		{
+			return this.Get(name).Get(key, def);
+		}
+
+
 
 		public void Clear()
 		{
