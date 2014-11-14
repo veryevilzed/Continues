@@ -27,7 +27,6 @@ namespace Async
 
 	public delegate ContinuesStatuses DContinueActionWithPath(ContinuesPath path);
 	public delegate ContinuesStatuses DContinueAction();
-
 	public delegate void DContinuesPathEvent(ContinuesPath path);
 
 	/// <summary>
@@ -97,19 +96,20 @@ namespace Async
 		/// <summary>
 		/// Бросить эту задачу и начать следующую
 		/// </summary>
-		public void Next()
+		public ContinuesPath Next()
 		{
 			if (this.actions.Count > 0) {
 				this.actions.RemoveAt(0);
 				if (this.OnNext != null && actions.Count > 0)
 					this.OnNext(this);
 			}
+			return this;
 		}
 
 		/// <summary>
 		/// Остановить очередь задач
 		/// </summary>
-		public void Stop()
+		public ContinuesPath Stop()
 		{
 			if (this.actions.Count > 0) {
 				this.actions.Clear();
@@ -117,6 +117,7 @@ namespace Async
 				if (this.actions.Count == 0 && this.OnFinish != null)
 					this.OnFinish(this);
 			}
+			return this;
 		}
 
 		/// <summary>
@@ -135,11 +136,12 @@ namespace Async
 					st = ((DContinueAction)actions[0]).Invoke();
 				bool error = false;
 				switch (st) {
-					case ContinuesStatuses.OK:
+				case ContinuesStatuses.OK:
+					if (actions.Count > 0)
 						actions.RemoveAt(0);
-						if (this.OnNext != null && actions.Count>0)
-							this.OnNext(this);
-						break;
+					if (this.OnNext != null && actions.Count > 0)
+						this.OnNext(this);
+					break;
 					case ContinuesStatuses.Error:
 						actions.Clear();
 						error = true;
