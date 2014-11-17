@@ -35,6 +35,7 @@
     <Compile Include="AsyncQueue.cs" />
     <Compile Include="Continues.cs" />
     <Compile Include="NamedAsyncQueue.cs" />
+    <Compile Include="Parallel.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
