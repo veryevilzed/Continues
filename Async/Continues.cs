@@ -23,7 +23,9 @@ namespace Async
 		/// Продолжить исполнение задачи
 		/// </summary>
 		Continue,
-        Wait
+        Wait,
+
+		Immediately
 	}
 
 	public delegate Statuses DContinueActionWithPath(ContinuesPath path);
@@ -60,7 +62,8 @@ namespace Async
 		/// <param name="action">Action.</param>
 		public ContinuesPath Add(DContinueActionWithPath action)
 		{
-			this.actions.Add(action);
+			if (action!=null)
+				this.actions.Add(action);
 			return this;
 		}
 
@@ -70,7 +73,24 @@ namespace Async
 		/// <param name="action">Action.</param>
 		public ContinuesPath Add(DContinueAction action)
 		{
-			this.actions.Add(action);
+			if (action!=null)
+				this.actions.Add(action);
+			return this;
+		}
+
+		public ContinuesPath Add(DContinueAction[] actions)
+		{
+			if (actions!=null)
+				foreach(DContinueAction a in actions)
+					this.actions.Add(a);
+			return this;
+		}
+
+		public ContinuesPath Add(DContinueActionWithPath[] actions)
+		{
+			if (actions!=null)
+				foreach(DContinueActionWithPath a in actions)
+					this.actions.Add(a);
 			return this;
 		}
 
@@ -144,6 +164,15 @@ namespace Async
 					if (this.OnNext != null && actions.Count > 0)
 							this.OnNext(this);
 						break;
+					case Statuses.Immediately:
+						if (actions.Count > 0)
+							actions.RemoveAt(0);
+						if (this.OnNext != null && actions.Count > 0)
+							this.OnNext(this);
+						if (actions.Count > 0)
+							Update();
+						break;
+
 					case Statuses.Error:
 						actions.Clear();
 						error = true;

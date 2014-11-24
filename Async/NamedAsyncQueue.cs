@@ -156,12 +156,13 @@ namespace Async
 
 		Dictionary<string, NamedActionState> queue;
 
-		public void Add(string name, NamedActionState state)
+		public string Add(string name, NamedActionState state)
 		{
 			if (name == "")
 				name = this.UUID();
 			if (!this.queue.ContainsKey(name))
 				this.queue.Add(name, state);
+			return name;
 		}
 
 		public bool Exist(string name)
@@ -174,10 +175,9 @@ namespace Async
 			this.queue.Remove(name);
 		}
 
-		public NamedAsyncQueue Add(string name, DNamedAction action)
+		public string Add(string name, DNamedAction action)
 		{
-			this.queue.Add(name, new NamedActionState(action));
-			return this;
+			return this.Add(name, new NamedActionState(action));
 		}
 
 		public NamedAsyncQueue Add(string name, DNamedAction action, Dictionary<string, object> args)
