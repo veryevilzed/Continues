@@ -119,9 +119,8 @@ namespace Async
 			foreach(DContinueAction action in actions)
 				path.Add(action);
 			this.Add(() => {
-				if (path.Count>0)
-					return Statuses.Continue;
-				return Statuses.OK;
+				path.Update();
+				return path.Count > 0 ? Statuses.Continue : Statuses.OK;
 			});
 			return this;
 		}
@@ -134,6 +133,7 @@ namespace Async
 		{
 			ContinuesPath _path = path.Invoke(new ContinuesPath());
 			this.Add(() => {
+				_path.Update();
 				return _path.Count > 0 ? Statuses.Continue : Statuses.OK;
 			});
 			return this;
@@ -209,19 +209,18 @@ namespace Async
 		public ContinuesPath Wait(Action beforeAction, float seconds, Action afterAction){
 
 			string guid = System.Guid.NewGuid().ToString();
+
 			this.Branch((ContinuesPath _path) => {
 
 				if (beforeAction != null)
-				{
 					_path.Add(() => {
 						beforeAction.Invoke();
-						return Statuses.Immediately;
+						return Statuses.OK;
 					});
-				}
 
 				_path.Add(() => {
 					NamedAsyncQueue.Instance.AddWaitLock(guid, seconds);
-					return Statuses.Continue;
+					return Statuses.Immediately;
 				});
 
 				_path.Add(() => {
@@ -231,16 +230,19 @@ namespace Async
 				});
 
 				if (afterAction != null)
-				{
 					_path.Add(() => {
 						afterAction.Invoke();
-						return Statuses.Immediately;
+						return Statuses.OK;
 					});
-				}
 
 				return _path;
 			});
 			return this;
+		}
+
+		public static ContinuesPath Create()
+		{
+			return new ContinuesPath();
 		}
 
 		/// <summary>
