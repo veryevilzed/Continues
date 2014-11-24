@@ -198,6 +198,22 @@ namespace Async
 			return this;
 		}
 
+		public string AddWaitLock(float seconds){
+			return this.Add("", (NamedActionState state) => {
+				if (state.FloatCounter < seconds)
+					return Statuses.Continue;
+				return Statuses.OK;	
+			});
+		}
+
+		public string AddWaitLock(string name, float seconds){
+			return this.Add(name, (NamedActionState state) => {
+				if (state.FloatCounter < seconds)
+					return Statuses.Continue;
+				return Statuses.OK;	
+			});
+		}
+
 		public NamedActionState Get(string name)
 		{
 			return this.queue[name];

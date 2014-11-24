@@ -18,16 +18,23 @@ namespace Async
 		/// </summary>
 		Error,
 
-
 		/// <summary>
 		/// Продолжить исполнение задачи
 		/// </summary>
 		Continue,
-        Wait,
+        
+		/// <summary>
+		/// Ожидание 
+		/// </summary>
+		Wait,
 
+		/// <summary>
+		/// Исполнить немедленно
+		/// </summary>
 		Immediately
 	}
 
+	public delegate ContinuesPath DContinuePathCreation(ContinuesPath path);
 	public delegate Statuses DContinueActionWithPath(ContinuesPath path);
 	public delegate Statuses DContinueAction();
 
@@ -57,7 +64,7 @@ namespace Async
 		public int Count { get { return actions.Count; } }
 
 		/// <summary>
-		/// Добавить задачу в конец очереди
+		/// Добавить действие в конец пути
 		/// </summary>
 		/// <param name="action">Action.</param>
 		public ContinuesPath Add(DContinueActionWithPath action)
@@ -68,7 +75,7 @@ namespace Async
 		}
 
 		/// <summary>
-		/// Добавить задачу в конец очереди
+		/// Добавить действие в конец пути
 		/// </summary>
 		/// <param name="action">Action.</param>
 		public ContinuesPath Add(DContinueAction action)
@@ -78,6 +85,10 @@ namespace Async
 			return this;
 		}
 
+		/// <summary>
+		/// Добавить действия в конец пути
+		/// </summary>
+		/// <param name="actions">Actions.</param>
 		public ContinuesPath Add(DContinueAction[] actions)
 		{
 			if (actions!=null)
@@ -86,11 +97,45 @@ namespace Async
 			return this;
 		}
 
+		/// <summary>
+		/// Добавить действия в путь
+		/// </summary>
+		/// <param name="actions">Actions.</param>
 		public ContinuesPath Add(DContinueActionWithPath[] actions)
 		{
 			if (actions!=null)
 				foreach(DContinueActionWithPath a in actions)
 					this.actions.Add(a);
+			return this;
+		}
+
+
+		/// <summary>
+		/// Создает ветку в текущем пути, путь ждет завершения ветки
+		/// </summary>
+		/// <param name="actions">Actions.</param>
+		public ContinuesPath Branch(DContinueAction[] actions){
+			ContinuesPath path = new ContinuesPath();
+			foreach(DContinueAction action in actions)
+				path.Add(action);
+			this.Add(() => {
+				if (path.Count>0)
+					return Statuses.Continue;
+				return Statuses.OK;
+			});
+			return this;
+		}
+
+		/// <summary>
+		/// Создает ветку в текущем пути, путь ждет завершения ветки
+		/// </summary>
+		/// <param name="path">Path.</param>
+		public ContinuesPath Branch(DContinuePathCreation path)
+		{
+			ContinuesPath _path = path.Invoke(new ContinuesPath());
+			this.Add(() => {
+				return _path.Count > 0 ? Statuses.Continue : Statuses.OK;
+			});
 			return this;
 		}
 
@@ -112,6 +157,89 @@ namespace Async
 		public ContinuesPath Insert(DContinueActionWithPath action)
 		{
 			this.actions.Insert(0,action);
+			return this;
+		}
+
+
+		/// <summary>
+		/// Добавить задачу в начало очереди
+		/// </summary>
+		/// <param name="action">Action.</param>
+		public ContinuesPath Insert(DContinueAction action, int position)
+		{
+			this.actions.Insert(position,action);
+			return this;
+		}
+
+
+		/// <summary>
+		/// Добавить задачу в начало очереди
+		/// </summary>
+		/// <param name="action">Action.</param>
+		public ContinuesPath Insert(DContinueActionWithPath action, int position)
+		{
+			this.actions.Insert(position,action);
+			return this;
+		}
+
+
+		/// <summary>
+		/// Создает ожидание на основе NamedAsyncQueue
+		/// </summary>
+		/// <param name="seconds">Seconds.</param>
+		public ContinuesPath Wait(float seconds){
+			return this.Wait(null, seconds, null);
+		}
+
+		/// <summary>
+		/// Действие, Ожидание
+		/// </summary>
+		/// <param name="beforeAction">Before action.</param>
+		/// <param name="seconds">Seconds.</param>
+		public ContinuesPath Wait(Action beforeAction, float seconds){
+			return this.Wait(beforeAction, seconds, null);
+		}
+
+		/// <summary>
+		/// Создает ожидание на основе NamedAsyncQueue
+		/// </summary>
+		/// <param name="beforeAction">Before Action</param>
+		/// <param name="seconds">Seconds Wait After.</param>
+		/// <param name="afterAction">After Action.</param>
+		public ContinuesPath Wait(Action beforeAction, float seconds, Action afterAction){
+
+			string guid = System.Guid.NewGuid().ToString();
+			this.Branch((ContinuesPath _path) => {
+
+				if (beforeAction != null)
+				{
+					_path.Add(() => {
+						beforeAction.Invoke();
+						return Statuses.Immediately;
+					});
+				}
+
+				_path.Add(() => {
+					NamedAsyncQueue.Instance.AddWaitLock(guid, seconds);
+					return Statuses.Continue;
+				});
+
+				_path.Add(() => {
+					if (NamedAsyncQueue.Instance.Exist(guid))
+						return Statuses.Continue;
+					return Statuses.OK;
+				});
+
+				if (afterAction != null)
+				{
+					_path.Add(() => {
+						afterAction.Invoke();
+						return Statuses.Immediately;
+					});
+				}
+
+				return _path;
+			});
 			return this;
 		}
 

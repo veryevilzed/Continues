@@ -48,7 +48,7 @@ namespace Async
 		{
 			actions.Enqueue(new AsyncQueueItem { Act = action });
 		}
-
+			
 		/// <summary>
 		/// Добавить отложенное событие
 		/// </summary>
