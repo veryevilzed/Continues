@@ -79,17 +79,13 @@ namespace AsyncTest
 
 			path = new ContinuesPath();
 
-
 			path.Branch(CreatePath());
-
 
 			th.Start();
 
 			Console.ReadKey();
 
 			th.Abort();
-
-
 
 		}
 	}

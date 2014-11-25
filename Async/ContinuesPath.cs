@@ -234,6 +234,16 @@ namespace Async
 			});
 			return this;
 		}
+
+		public ContinuesPath Wait()
+		{
+			this.Add(() => {
+				return Statuses.OK;
+			});
+			return this;
+		}
+
+
 		/// <summary>
 		/// Действие, Ожидание
 		/// </summary>
