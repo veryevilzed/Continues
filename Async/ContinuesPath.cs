@@ -34,11 +34,10 @@ namespace Async
 		Immediately
 	}
 
+	public delegate void DContinuesPathEvent(ContinuesPath path);
 	public delegate ContinuesPath DContinuePathCreation(ContinuesPath path);
 	public delegate Statuses DContinueActionWithPath(ContinuesPath path);
 	public delegate Statuses DContinueAction();
-
-	public delegate void DContinuesPathEvent(ContinuesPath path);
 
 	/// <summary>
 	/// Путь задач
@@ -52,6 +51,16 @@ namespace Async
 		public event DContinuesPathEvent OnFinish;
 		public event DContinuesPathEvent OnError;
 
+
+		private static ContinuesPath instance = null;
+		public static ContinuesPath Instance { 
+			get { 
+				if (instance == null)
+					instance = ContinuesPath.Create();
+				return instance;
+			}
+		}
+
 		public ContinuesPath()
 		{
 			actions = new List<Delegate>();
@@ -62,6 +71,16 @@ namespace Async
 		/// </summary>
 		/// <value>The count.</value>
 		public int Count { get { return actions.Count; } }
+
+
+		public ContinuesPath Add(Action action){
+			if (action != null)
+				this.Add(() => {
+					action.Invoke();
+					return Statuses.Immediately;
+				});
+			return this;
+		}
 
 		/// <summary>
 		/// Добавить действие в конец пути
@@ -201,6 +220,15 @@ namespace Async
 		}
 
 		/// <summary>
+		/// Ожидание, Действие
+		/// </summary>
+		/// <param name="seconds">Seconds.</param>
+		/// <param name="afterAction">After action.</param>
+		public ContinuesPath Wait(float seconds, Action afterAction){
+			return this.Wait(null, seconds, afterAction);
+		}
+
+		/// <summary>
 		/// Создает ожидание на основе NamedAsyncQueue
 		/// </summary>
 		/// <param name="beforeAction">Before Action</param>
@@ -211,12 +239,7 @@ namespace Async
 			string guid = System.Guid.NewGuid().ToString();
 
 			this.Branch((ContinuesPath _path) => {
-
-				if (beforeAction != null)
-					_path.Add(() => {
-						beforeAction.Invoke();
-						return Statuses.OK;
-					});
+				_path.Add(beforeAction);
 
 				_path.Add(() => {
 					NamedAsyncQueue.Instance.AddWaitLock(guid, seconds);
@@ -224,16 +247,10 @@ namespace Async
 				});
 
 				_path.Add(() => {
-					if (NamedAsyncQueue.Instance.Exist(guid))
-						return Statuses.Continue;
-					return Statuses.OK;
+					return NamedAsyncQueue.Instance.Exist(guid) ? Statuses.Continue : Statuses.OK;
 				});
 
-				if (afterAction != null)
-					_path.Add(() => {
-						afterAction.Invoke();
-						return Statuses.OK;
-					});
+				_path.Add(afterAction);
 
 				return _path;
 			});
@@ -243,6 +260,18 @@ namespace Async
 		public static ContinuesPath Create()
 		{
 			return new ContinuesPath();
+		}
+
+		public static ContinuesPath Create(DContinueAction action){
+			ContinuesPath path = new ContinuesPath();
+			path.Add(action);
+			return path;
+		}
+
+		public static ContinuesPath Create(DContinueAction[] actions){
+			ContinuesPath path = new ContinuesPath();
+			path.Add(actions);
+			return path;
 		}
 
 		/// <summary>
@@ -265,11 +294,17 @@ namespace Async
 		{
 			if (this.actions.Count > 0) {
 				this.actions.Clear();
-
 				if (this.actions.Count == 0 && this.OnFinish != null)
 					this.OnFinish(this);
 			}
 			return this;
+		}
+
+		/// <summary>
+		/// Clear this path.
+		/// </summary>
+		public ContinuesPath Clear(){
+			this.Stop();
 		}
 
 		/// <summary>
