@@ -44,7 +44,9 @@ namespace Async
 	/// </summary>
 	public class ContinuesPath
 	{
-		List<Delegate> actions;
+		private List<Delegate> actions;
+
+
 
 		public event DContinuesPathEvent OnNext;
 		public event DContinuesPathEvent OnSuccess;
@@ -73,7 +75,7 @@ namespace Async
 		public int Count { get { return actions.Count; } }
 
 
-		public ContinuesPath Add(Action action){
+		public ContinuesPath AddAction(Action action){
 			if (action != null)
 				this.Add(() => {
 					action.Invoke();
@@ -128,7 +130,6 @@ namespace Async
 			return this;
 		}
 
-
 		/// <summary>
 		/// Создает ветку в текущем пути, путь ждет завершения ветки
 		/// </summary>
@@ -139,7 +140,7 @@ namespace Async
 				path.Add(action);
 			this.Add(() => {
 				path.Update();
-				return path.Count > 0 ? Statuses.Continue : Statuses.OK;
+				return path.Count > 0 ? Statuses.Continue : Statuses.Immediately;
 			});
 			return this;
 		}
@@ -148,13 +149,29 @@ namespace Async
 		/// Создает ветку в текущем пути, путь ждет завершения ветки
 		/// </summary>
 		/// <param name="path">Path.</param>
-		public ContinuesPath Branch(DContinuePathCreation path)
+		public ContinuesPath Branch(DContinuePathCreation pathCreation)
 		{
-			ContinuesPath _path = path.Invoke(new ContinuesPath());
+			ContinuesPath path = pathCreation.Invoke(new ContinuesPath());
+			return this.Branch(path);
+		}
+
+		/// <summary>
+		/// Добавить Path
+		/// </summary>
+		/// <param name="path">Path.</param>
+		public ContinuesPath Branch(ContinuesPath path)
+		{
 			this.Add(() => {
-				_path.Update();
-				return _path.Count > 0 ? Statuses.Continue : Statuses.OK;
+				path.Update();
+				return path.Count > 0 ? Statuses.Continue : Statuses.Immediately;
 			});
+			return this;
+		}
+
+		public ContinuesPath CopyActions(ContinuesPath other)
+		{
+			foreach (Delegate d in other.actions)
+				this.actions.Add(d);
 			return this;
 		}
 
@@ -210,6 +227,13 @@ namespace Async
 			return this.Wait(null, seconds, null);
 		}
 
+		public ContinuesPath OK()
+		{
+			this.Add(() => {
+				return Statuses.OK;
+			});
+			return this;
+		}
 		/// <summary>
 		/// Действие, Ожидание
 		/// </summary>
@@ -239,7 +263,7 @@ namespace Async
 			string guid = System.Guid.NewGuid().ToString();
 
 			this.Branch((ContinuesPath _path) => {
-				_path.Add(beforeAction);
+				_path.AddAction(beforeAction);
 
 				_path.Add(() => {
 					NamedAsyncQueue.Instance.AddWaitLock(guid, seconds);
@@ -247,10 +271,10 @@ namespace Async
 				});
 
 				_path.Add(() => {
-					return NamedAsyncQueue.Instance.Exist(guid) ? Statuses.Continue : Statuses.OK;
+					return NamedAsyncQueue.Instance.Exist(guid) ? Statuses.Continue : Statuses.Immediately;
 				});
 
-				_path.Add(afterAction);
+				_path.AddAction(afterAction);
 
 				return _path;
 			});
@@ -304,7 +328,8 @@ namespace Async
 		/// Clear this path.
 		/// </summary>
 		public ContinuesPath Clear(){
-			this.Stop();
+			return this.Stop();
+
 		}
 
 		/// <summary>

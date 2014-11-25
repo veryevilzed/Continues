@@ -19,38 +19,69 @@ namespace AsyncTest
 		{
 			while (run) {
 				NamedAsyncQueue.Instance.Update(0.1f);
-				if (path != null)
+				if (path != null) {
 					path.Update();
+					Console.WriteLine("       cnt:{0} {1}", path.Count, GC.GetTotalMemory(false) );
+				}
 				Thread.Sleep(100);
 			}
 		}
 
+		public static ContinuesPath CreatePath()
+		{
+			ContinuesPath __path = ContinuesPath.Create();
+			__path
+				.Add(() => {
+					Console.WriteLine(">");
+					return Statuses.OK;
+				})
 
+				.Add(() => {
+					Console.WriteLine(">");
+					return Statuses.Immediately;
+				})
+
+
+				.Wait(() => { 
+					Console.WriteLine("Hello");
+				}, 1.0f, () => {
+					Console.WriteLine("World");
+				})
+
+				.Add(() => {
+					Console.WriteLine("!");
+					return Statuses.OK;
+				})
+
+				.Branch((_path) => {
+					_path.Wait(
+						() => {
+							Console.WriteLine("Play Sound");
+						}, 
+						1.0f, 
+						() => {
+							Console.WriteLine("Stop Sound");
+						}
+					);
+					return _path;
+				})
+				.Add(() => {
+					path.CopyActions(CreatePath());
+					return Statuses.OK;
+				});
+			return __path;
+		}
 
 		public static void Main(string[] args)
 		{
 
 			th = new Thread(new ThreadStart(Run));
 
-
-			path = ContinuesPath.Create();
-
-			path.Add(() => {
-				Console.WriteLine(">");
-				return Statuses.OK;
-			});
+			path = new ContinuesPath();
 
 
-			path.Wait(() => { 
-				Console.WriteLine("Hello");
-			}, 2.0f, () => {
-				Console.WriteLine("World");
-			});
+			path.Branch(CreatePath());
 
-			path.Add(() => {
-				Console.WriteLine("!");
-				return Statuses.OK;
-			});
 
 			th.Start();
 

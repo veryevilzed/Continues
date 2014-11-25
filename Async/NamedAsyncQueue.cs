@@ -200,17 +200,13 @@ namespace Async
 
 		public string AddWaitLock(float seconds){
 			return this.Add("", (NamedActionState state) => {
-				if (state.FloatCounter < seconds)
-					return Statuses.Continue;
-				return Statuses.OK;	
+				return state.FloatCounter < seconds ? Statuses.Continue : Statuses.OK;	
 			});
 		}
 
 		public string AddWaitLock(string name, float seconds){
 			return this.Add(name, (NamedActionState state) => {
-				if (state.FloatCounter < seconds)
-					return Statuses.Continue;
-				return Statuses.OK;	
+				return state.FloatCounter < seconds ? Statuses.Continue : Statuses.OK;	
 			});
 		}
 
