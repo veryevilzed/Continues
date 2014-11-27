@@ -407,7 +407,8 @@ namespace Async
 
 					case Statuses.Error:
 						actions.Clear();
-						actions = errors;
+						if (errors != null)
+							actions = errors;
 						errors = null;
 						error = true;
 						if (this.OnError != null)
