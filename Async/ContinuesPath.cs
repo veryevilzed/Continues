@@ -45,8 +45,7 @@ namespace Async
 	public class ContinuesPath
 	{
 		private List<Delegate> actions;
-
-
+		private List<Delegate> errors;
 
 		public event DContinuesPathEvent OnNext;
 		public event DContinuesPathEvent OnSuccess;
@@ -66,6 +65,7 @@ namespace Async
 		public ContinuesPath()
 		{
 			actions = new List<Delegate>();
+			errors = new List<Delegate>();
 		}
 
 		/// <summary>
@@ -144,6 +144,38 @@ namespace Async
 			});
 			return this;
 		}
+
+		public ContinuesPath Error(DContinueAction error)
+		{
+			if (error!=null)
+				this.errors.Add(error);
+			return this;
+		}
+
+
+		public ContinuesPath Error(DContinueActionWithPath error)
+		{
+			if (error!=null)
+				this.errors.Add(error);
+			return this;
+		}
+
+		public ContinuesPath Error(DContinueActionWithPath[] errors)
+		{
+			if (actions!=null)
+				foreach(DContinueActionWithPath a in errors)
+					this.errors.Add(a);
+			return this;
+		}
+
+		public ContinuesPath Error(DContinueAction[] errors)
+		{
+			if (actions!=null)
+				foreach(DContinueAction a in errors)
+					this.errors.Add(a);
+			return this;
+		}
+
 
 		/// <summary>
 		/// Создает ветку в текущем пути, путь ждет завершения ветки
@@ -375,6 +407,8 @@ namespace Async
 
 					case Statuses.Error:
 						actions.Clear();
+						actions = errors;
+						errors = null;
 						error = true;
 						if (this.OnError != null)
 							this.OnError(this);
