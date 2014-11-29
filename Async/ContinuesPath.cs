@@ -187,6 +187,13 @@ namespace Async
 			return this.Branch(path);
 		}
 
+		public ContinuesPath InsertBranch(DContinuePathCreation pathCreation)
+		{
+			ContinuesPath path = pathCreation.Invoke(new ContinuesPath());
+			return this.InsertBranch(path);
+		}
+
+
 		/// <summary>
 		/// Добавить Path
 		/// </summary>
@@ -199,6 +206,17 @@ namespace Async
 			});
 			return this;
 		}
+
+
+		public ContinuesPath InsertBranch(ContinuesPath path)
+		{
+			this.Insert(() => {
+				path.Update();
+				return path.Count > 0 ? Statuses.Continue : Statuses.Immediately;
+			});
+			return this;
+		}
+
 
 		public ContinuesPath CopyActions(ContinuesPath other)
 		{
